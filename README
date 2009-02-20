@@ -1,0 +1,71 @@
+-- PostgreSQL table versioning
+-- Copyright 2006 Jason Kohles <email@jasonkohles.com>
+-- http://www.jasonkohles.com/projects/postgresql-versioning/
+
+
+This package is a collection of utilities for PostgreSQL which adds a simple
+'data versioning' schema to a database.  It was originally created as part of
+an AJAX powered web interface to a database, which allowed the front end to
+keep track of what version of the data it currently had loaded, and not need
+to request new data if the version number hadn't changed.
+
+
+-------------------------------------------------------------------------------
+
+To use it, first make sure your database has the pgsql procedural language
+available:
+
+    createlang plpgsql my_database
+
+Then apply the postgresql-versioning.sql file.
+
+    psql my_database < postgresql-versioning.sql
+
+This will create a new schema named 'versioning' which contains the following
+items:
+
+    * A table named 'tables' which contains one row for each table you choose
+      to track versions for.  It has a 'name' column which contains the table
+      name, a 'version' column which contains a simple integer version number
+      which is incremented whenever the data in that table changes, and an
+      'updated' column containing the timestamp of the last time the data was
+      updated.
+
+    * A function called 'update_table' which is called by the triggers on the
+      tables you are tracking versions for.  This function is responsible for
+      updating the information in the 'tables' table.
+
+    * A function called 'update_triggers' which automatically creates triggers
+      for all the tables in your database.  This function ignores the
+      'pg_catalog', 'pg_toast', and 'versioning' schemas, since it is assumed
+      you don't want to version the system databases and if you tried to use
+      these triggers on the 'versioning.tables' table, you would probably tear
+      a hole in the space-time continuum, or at least create infinite loops of
+      updates.
+
+-------------------------------------------------------------------------------
+
+Once the versioning schema is available in your database, you have two options
+on how to use it.
+
+    * You can use the update_triggers function to automatically setup the
+      appropriate triggers on all of your tables (assuming you want to track
+      versions for all of them).
+
+        SELECT * FROM versioning.update_triggers();
+
+    The select will return a list of the tables the triggers were added to,
+    so if you add tables later, you can simply run it again and it will just
+    add the triggers where they are needed.
+
+    * Alternately, you can add triggers yourself to the tables you want to
+      track.
+
+          CREATE TRIGGER table_version
+          AFTER INSERT OR UPDATE OR DELETE
+          ON FOR EACH STATEMENT
+          EXECUTE PROCEDURE versioning.update_table();
+
+      You could also use the code for the update_triggers function as a
+      basis for creating your own automatic setup function which follows your
+      rules for determining what tables to add the triggers to.
