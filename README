@@ -63,7 +63,7 @@ on how to use it.
 
           CREATE TRIGGER table_version
           AFTER INSERT OR UPDATE OR DELETE
-          ON FOR EACH STATEMENT
+          ON my_table FOR EACH STATEMENT
           EXECUTE PROCEDURE versioning.update_table();
 
       You could also use the code for the update_triggers function as a
