@@ -69,7 +69,7 @@ BEGIN
         BEGIN
             EXECUTE 'CREATE TRIGGER table_version
                     AFTER INSERT OR UPDATE OR DELETE
-                    ON ' || t.relname || ' FOR EACH STATEMENT
+                    ON ' || quote_ident(t.relname) || ' FOR EACH STATEMENT
                     EXECUTE PROCEDURE versioning.update_table();';
             RETURN NEXT t.relname;
         EXCEPTION WHEN duplicate_object THEN
